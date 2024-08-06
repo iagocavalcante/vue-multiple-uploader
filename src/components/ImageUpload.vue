@@ -9,7 +9,7 @@
           :name="`input-file-${id}`"
           multiple
           accept="image/*"
-          @change="previewThumbnail($event);"
+          @change="previewThumbnail($event)"
           hidden
         />
         <div class="v-text-field__details" v-if="errors.length > 0">
@@ -24,17 +24,17 @@
         </label>
       </div>
       <div class="end" v-if="disable">
-        <button type="button"
+        <button
+          type="button"
           class="btn-upload zoom zoom-out"
-          @click.prevent="zoomOut()">
+          @click.prevent="zoomOut()"
+        >
           <i class="fas fa-search-minus"></i>
-          {{textMinus}}
+          {{ textMinus }}
         </button>
-        <button type="button"
-          class="btn-upload zoom"
-          @click.prevent="zoomIn()">
+        <button type="button" class="btn-upload zoom" @click.prevent="zoomIn()">
           <i class="fas fa-search-plus"></i>
-          {{textPlus}}
+          {{ textPlus }}
         </button>
       </div>
     </div>
@@ -42,139 +42,142 @@
 </template>
 
 <script>
-import Cropper from 'js-cropper'
-import { type } from 'os'
+import { ref, defineComponent, watch, onMounted } from "vue";
+import Cropper from "js-cropper";
 
-export default {
-  name: 'OImagePreview',
+export default defineComponent({
+  name: "OImagePreview",
   props: {
     id: {
       type: Number,
       default: () => new Date().getTime(),
-      required: false
+      required: false,
     },
     width: {
       type: Number,
       default: 657,
-      required: false
+      required: false,
     },
     height: {
       type: Number,
       default: 432,
-      required: false
+      required: false,
     },
     textMinus: {
       type: String,
-      default: '',
-      required: false
+      default: "",
+      required: false,
     },
     textPlus: {
       type: String,
-      default: '',
-      required: false
+      default: "",
+      required: false,
     },
     disable: {
       type: Boolean,
       default: true,
-      required: false
+      required: false,
     },
     image: {
       type: String,
-      default: '',
-      required: false
+      default: "",
+      required: false,
     },
     errors: {
       type: Array,
       default: () => [],
-      required: false
-    }
+      required: false,
+    },
   },
-  data: () => ({
-    cropper: {},
-    initialThumbnail: '',
-    zoomCount: 0,
-    croppedImage: ''
-  }),
-  watch: {
-    image: {
-      handler: function (val) {
-        console.log(val)
-        this.cropper.loadImage(val)
-      },
-      deep: true
-    }
-  },
-  mounted () {
-    this.cropper = new Cropper({
-      width: this.width,
-      height: this.height
-    })
-    if (this.disable) {
-      this.cropper.render(`#crop-${this.id}`)
-      this.disableDefaultTools()
-    }
-  },
-  methods: {
-    setCropped (src) {
-      this.croppedImage = src
-    },
-    zoomIn () {
-      this.zoomCount = Math.min(1, this.zoomCount + 0.1)
-      this.cropper.setZoom(this.zoomCount)
-    },
-    zoomOut () {
-      this.zoomCount = Math.min(0, this.zoomCount - 0.1)
-      this.cropper.setZoom(this.zoomCount)
-    },
-    disableDefaultTools () {
-      const tools = document.querySelectorAll('.cropper-tools')
-      tools.forEach(tool => {
-        tool.style.display = 'none'
-      })
-    },
-    previewThumbnail (e) {
-      let reader = new FileReader()
-      const file = e.target.files[0]
+  setup(props, { emit }) {
+    const cropper = ref({});
+    const zoomCount = ref(0);
+    const croppedImage = ref("");
+    const isDefaultPreview = ref(true);
 
-      if (!file.type.includes('image/')) return
+    watch(
+      () => props.image,
+      (val) => {
+        console.log(val);
+        cropper.value.loadImage(val);
+      },
+      { deep: true }
+    );
+
+    onMounted(() => {
+      cropper.value = new Cropper({
+        width: props.width,
+        height: props.height,
+      });
+      if (props.disable) {
+        cropper.value.render(`#crop-${props.id}`);
+        disableDefaultTools();
+      }
+    });
+
+    const disableDefaultTools = () => {
+      const tools = document.querySelectorAll(".cropper-tools");
+      tools.forEach((tool) => {
+        tool.style.display = "none";
+      });
+    };
+
+    const setCropped = (src) => {
+      croppedImage.value = src;
+    };
+
+    const zoomIn = () => {
+      zoomCount.value = Math.min(1, zoomCount.value + 0.1);
+      cropper.value.setZoom(zoomCount.value);
+    };
+
+    const zoomOut = () => {
+      zoomCount.value = Math.max(0, zoomCount.value - 0.1);
+      cropper.value.setZoom(zoomCount.value);
+    };
+
+    const previewThumbnail = (e) => {
+      let reader = new FileReader();
+      const file = e.target.files[0];
+
+      if (!file.type.includes("image/")) return;
 
       reader.onload = (event) => {
-        this.cropper.loadImage(event.target.result).then(function (crop) {
-          console.info('Image is ready to crop.')
-        })
-        this.isDefaultPreview = false
-      }
+        cropper.value.loadImage(event.target.result).then(function (crop) {
+          console.info("Image is ready to crop.");
+        });
+        isDefaultPreview.value = false;
+      };
 
-      reader.readAsDataURL(file)
+      reader.readAsDataURL(file);
 
-      this.handleImage(e)
-    },
-    handleImage (e) {
-      // const cropped = this.croppedImage
-      // console.log('NOVO CORTADO => ', cropped)
-      // const data = cropped.split('base64,')[1];
-      // console.log('CORTADA ORIGINAL=> ', cropped)
-      // const blobBin = atob(data)
-      // console.log('CORTADA => ', blobBin)
-      // const byteNumbers = new Array(blobBin.length);
-      // for (let i = 0; i < blobBin.length; i++) {
-      //   byteNumbers[i] = blobBin.charCodeAt(i);
-      // }
-      // const byteArray = new Uint8Array(byteNumbers);
-      // console.log(e.target.files[0])
-      // const blob = new Blob([byteArray], { type: e.target.files[0].name })
-      // let file = new File([blob], e.target.files[0].name, { type: e.target.files[0].type })
-      // console.log('FILES CORTADOS LEGAIS => ', file)
-      this.$emit('handleImage', e)
-    }
-  }
-}
+      handleImage(e);
+    };
+
+    const handleImage = (e) => {
+      emit("handleImage", e);
+    };
+
+    return {
+      cropper,
+      zoomCount,
+      croppedImage,
+      isDefaultPreview,
+      setCropped,
+      zoomIn,
+      zoomOut,
+      previewThumbnail,
+      handleImage,
+      disableDefaultTools,
+    };
+  },
+});
 </script>
 
 <style scoped>
 .cropper {
   height: 245px;
-  background: #DDD;
+  background: #ddd;
 }
 
 .preview-buttons {
@@ -245,7 +248,8 @@ export default {
   -webkit-transition-property: opacity, -webkit-box-shadow, -webkit-transform;
   transition-property: opacity, -webkit-box-shadow, -webkit-transform;
   transition-property: box-shadow, transform, opacity;
-  transition-property: box-shadow, transform, opacity, -webkit-box-shadow, -webkit-transform;
+  transition-property: box-shadow, transform, opacity, -webkit-box-shadow,
+    -webkit-transform;
   -webkit-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   -webkit-user-select: none;

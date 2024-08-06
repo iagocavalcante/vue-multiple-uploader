@@ -5,10 +5,12 @@
         class="image"
         v-for="(image, index) in images"
         :key="index"
-        :style="{ backgroundImage: 'url(' + image.url + ')'}"
+        :style="{ backgroundImage: 'url(' + image.url + ')' }"
       >
         <span class="close-button">
-          <button @click="removeImage(image, index)" class="font-button"><i class="fas fa-times"></i></button>
+          <button @click="removeImage(image, index)" class="font-button">
+            <i class="fas fa-times"></i>
+          </button>
         </span>
       </div>
     </section>
@@ -26,29 +28,31 @@
 </template>
 
 <script>
-export default {
-  name: 'OGallery',
+import { defineComponent } from "vue";
+
+export default defineComponent({
+  name: "OGallery",
   props: {
     images: {
       type: Array,
       required: false,
-      default: () => []
+      default: () => [],
     },
     errors: {
       type: Array,
       default: () => [],
-      required: false
-    }
+      required: false,
+    },
   },
   methods: {
-    removeImage (image, index) {
+    removeImage(image, index) {
       if (image.file.id) {
-        this.$emit('removeFromGallery', image.file.id)
+        this.$emit("removeFromGallery", image.file.id);
       }
-      this.$delete(this.images, index)
-    }
-  }
-}
+      this.$emit("removeImage", index);
+    },
+  },
+});
 </script>
 
 <style scoped>
@@ -120,5 +124,4 @@ export default {
   font-weight: bold;
   color: #365b71;
 }
-
 </style>
